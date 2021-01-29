@@ -6,7 +6,6 @@ module.exports = {
     AgendaHandler: require('./lib/agenda/agenda-handler.lib'),
     amqpMessageQueue: require('./lib/mq/_message-queue'),
     Queue: require('./lib/mq/queue'),
-    DelayedRequeue: require('./lib/mq/delayed-requeue')
-  }
-
+    DelayedRequeue: require('./lib/mq/delayed-requeue'),
+  },
 }

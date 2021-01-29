@@ -5,11 +5,11 @@ const NodeEnvironment = require('jest-environment-node')
 const setupGlobal = require('./setup')
 
 class MongoEnvironment extends NodeEnvironment {
-  constructor (config) {
+  constructor(config) {
     super(config)
   }
 
-  async setup () {
+  async setup() {
     console.log('Setup MongoDB Test Environment')
     if (!global.__MONGOD__) setupGlobal()
     this.global.__MONGO_URI__ = await global.__MONGOD__.getConnectionString()
@@ -18,13 +18,13 @@ class MongoEnvironment extends NodeEnvironment {
     await super.setup()
   }
 
-  async teardown () {
+  async teardown() {
     console.log('Teardown MongoDB Test Environment')
 
     await super.teardown()
   }
 
-  runScript (script) {
+  runScript(script) {
     return super.runScript(script)
   }
 }

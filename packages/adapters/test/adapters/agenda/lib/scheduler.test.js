@@ -3,14 +3,15 @@ global.config = {
     error: jest.fn(),
     debug: jest.fn(),
     warn: jest.fn(),
-    info: jest.fn()
-  })
+    info: jest.fn(),
+  }),
 }
 const { MongoClient } = require('mongodb')
 const Agenda = require('agenda')
 const Scheduler = require('../../../../lib/agenda/agenda-scheduler.lib')
 const Promise = require('bluebird')
-const promisify = require('bluebird').promisify
+const { promisify } = require('bluebird')
+
 const delay = promisify(setTimeout)
 const _ = require('lodash')
 
@@ -19,12 +20,12 @@ let db
 let agenda
 let agendaCols
 let scheduler
-let jobName = 'achieved_kpi'
+const jobName = 'achieved_kpi'
 const key = {
   job_noti_id: '152_5aa24fa9424d913f6bae2a09',
-  job_event: jobName
+  job_event: jobName,
 }
-async function findJob (query) {
+async function findJob(query) {
   try {
     const jobs = await agenda.jobs(query)
     return jobs
@@ -34,13 +35,13 @@ async function findJob (query) {
   }
 }
 const data = {
-  '_id': '152_5aa24fa9424d913f6bae2a09',
-  'campaign_enabled': true,
-  'account_id': '152',
-  'campaign_id': '5aa24fa9424d913f6bae2a09',
-  '__v': 0,
-  'achieved_kpi': { 'enabled': true },
-  'emails': ['sorasak.s@zanroo.com', 'greenrenge@gmail.com']
+  _id: '152_5aa24fa9424d913f6bae2a09',
+  campaign_enabled: true,
+  account_id: '152',
+  campaign_id: '5aa24fa9424d913f6bae2a09',
+  __v: 0,
+  achieved_kpi: { enabled: true },
+  emails: ['sorasak.s@zanroo.com', 'greenrenge@gmail.com'],
 }
 const interval = '10 minutes'
 
@@ -52,10 +53,10 @@ beforeAll(async () => {
   agenda = new Agenda({
     mongo: db,
     db: {
-      collection: 'test_agenda'
+      collection: 'test_agenda',
     },
     ssl: true,
-    defaultLockLifetime: 5000
+    defaultLockLifetime: 5000,
   })
   //   agenda.define('achieved_kpi', (job, cb) => {
 
@@ -90,8 +91,18 @@ describe('JOB NOT IN DB YET', () => {
     }
   })
   it('if key not match it should create a new job', async () => {
-    const task1 = scheduler.startJob({ jobName, key: _.assign({}, key, { job_event: 'other jobName' }), interval, data })
-    const task2 = scheduler.startJob({ jobName, key: _.assign({}, key, { job_noti_id: 'other id' }), interval, data })
+    const task1 = scheduler.startJob({
+      jobName,
+      key: _.assign({}, key, { job_event: 'other jobName' }),
+      interval,
+      data,
+    })
+    const task2 = scheduler.startJob({
+      jobName,
+      key: _.assign({}, key, { job_noti_id: 'other id' }),
+      interval,
+      data,
+    })
     const task3 = scheduler.startJob({ jobName, key, interval, data })
     await task1
     await task2
@@ -99,8 +110,18 @@ describe('JOB NOT IN DB YET', () => {
     expect(await agendaCols.count()).toBe(3)
   })
   it('it should not remove any job if job never exist', async () => {
-    const task1 = scheduler.startJob({ jobName, key: _.assign({}, key, { job_event: 'other jobName' }), interval, data })
-    const task2 = scheduler.startJob({ jobName, key: _.assign({}, key, { job_noti_id: 'other id' }), interval, data })
+    const task1 = scheduler.startJob({
+      jobName,
+      key: _.assign({}, key, { job_event: 'other jobName' }),
+      interval,
+      data,
+    })
+    const task2 = scheduler.startJob({
+      jobName,
+      key: _.assign({}, key, { job_noti_id: 'other id' }),
+      interval,
+      data,
+    })
     await task1
     await task2
     await scheduler.stopJob({ jobName, key })
@@ -108,17 +129,35 @@ describe('JOB NOT IN DB YET', () => {
     try {
       const newJob = await findJob(Scheduler.agendaQueryBuild(key))
       expect(newJob.length).toEqual(0)
-      const mockJob1 = await findJob(Scheduler.agendaQueryBuild(_.assign({}, key, { job_event: 'other jobName' })))
+      const mockJob1 = await findJob(
+        Scheduler.agendaQueryBuild(
+          _.assign({}, key, { job_event: 'other jobName' }),
+        ),
+      )
       expect(mockJob1.length).toEqual(1)
-      const mockJob2 = await findJob(Scheduler.agendaQueryBuild(_.assign({}, key, { job_noti_id: 'other id' })))
+      const mockJob2 = await findJob(
+        Scheduler.agendaQueryBuild(
+          _.assign({}, key, { job_noti_id: 'other id' }),
+        ),
+      )
       expect(mockJob2.length).toEqual(1)
     } catch (err) {
       fail(err)
     }
   })
   it('it should not cancel any job if job never exist', async () => {
-    const task1 = scheduler.startJob({ jobName, key: _.assign({}, key, { job_event: 'other jobName' }), interval, data })
-    const task2 = scheduler.startJob({ jobName, key: _.assign({}, key, { job_noti_id: 'other id' }), interval, data })
+    const task1 = scheduler.startJob({
+      jobName,
+      key: _.assign({}, key, { job_event: 'other jobName' }),
+      interval,
+      data,
+    })
+    const task2 = scheduler.startJob({
+      jobName,
+      key: _.assign({}, key, { job_noti_id: 'other id' }),
+      interval,
+      data,
+    })
     await task1
     await task2
     try {
@@ -129,9 +168,17 @@ describe('JOB NOT IN DB YET', () => {
     try {
       const newJob = await findJob(Scheduler.agendaQueryBuild(key))
       expect(newJob.length).toEqual(0)
-      const mockJob1 = await findJob(Scheduler.agendaQueryBuild(_.assign({}, key, { job_event: 'other jobName' })))
+      const mockJob1 = await findJob(
+        Scheduler.agendaQueryBuild(
+          _.assign({}, key, { job_event: 'other jobName' }),
+        ),
+      )
       expect(mockJob1.length).toEqual(1)
-      const mockJob2 = await findJob(Scheduler.agendaQueryBuild(_.assign({}, key, { job_noti_id: 'other id' })))
+      const mockJob2 = await findJob(
+        Scheduler.agendaQueryBuild(
+          _.assign({}, key, { job_noti_id: 'other id' }),
+        ),
+      )
       expect(mockJob2.length).toEqual(1)
     } catch (err) {
       fail(err)
@@ -142,10 +189,13 @@ describe('JOB EXIST IN DB', () => {
   it('it should not duplicate the existing but change data and run it', async () => {
     await scheduler.startJob({ jobName, key, interval, data })
     const newData = _.cloneDeep(data)
-    newData.emails = [
-      'new@email.com'
-    ]
-    await scheduler.startJob({ jobName, key, interval: '5 hours', data: newData })
+    newData.emails = ['new@email.com']
+    await scheduler.startJob({
+      jobName,
+      key,
+      interval: '5 hours',
+      data: newData,
+    })
     expect(await agendaCols.count()).toBe(1)
     const job = await findJob(Scheduler.agendaQueryBuild(key))
     expect(job.length).toBe(1)
@@ -155,7 +205,12 @@ describe('JOB EXIST IN DB', () => {
     expect(job[0].attrs.disabled).toBe(false)
   })
   it('it should cancel the existing job', async () => {
-    const task1 = scheduler.startJob({ jobName, key: _.assign({}, key, { job_noti_id: 'other id' }), interval, data })
+    const task1 = scheduler.startJob({
+      jobName,
+      key: _.assign({}, key, { job_noti_id: 'other id' }),
+      interval,
+      data,
+    })
     const task2 = scheduler.startJob({ jobName, key, interval, data })
     await task1
     await task2
@@ -169,7 +224,12 @@ describe('JOB EXIST IN DB', () => {
     expect(job.length).toBe(0)
   })
   it('it should disable if job is enable', async () => {
-    const task1 = scheduler.startJob({ jobName, key: _.assign({}, key, { job_noti_id: 'other id' }), interval, data })
+    const task1 = scheduler.startJob({
+      jobName,
+      key: _.assign({}, key, { job_noti_id: 'other id' }),
+      interval,
+      data,
+    })
     const task2 = scheduler.startJob({ jobName, key, interval, data })
     await task1
     await task2
@@ -185,10 +245,14 @@ describe('FLOW CONTROL FEATURE', () => {
   it('it should change data if flow control is greater than the old one', async () => {
     await scheduler.startJob({ jobName, key, interval, data, flowControl: 10 })
     const newData = _.cloneDeep(data)
-    newData.emails = [
-      'new@email.com'
-    ]
-    await scheduler.startJob({ jobName, key, interval: '5 hours', data: newData, flowControl: 15 })
+    newData.emails = ['new@email.com']
+    await scheduler.startJob({
+      jobName,
+      key,
+      interval: '5 hours',
+      data: newData,
+      flowControl: 15,
+    })
     expect(await agendaCols.count()).toBe(1)
     const job = await findJob(Scheduler.agendaQueryBuild(key))
     expect(job.length).toBe(1)
@@ -200,10 +264,14 @@ describe('FLOW CONTROL FEATURE', () => {
   it('it should not change data if flow control is less than the old one', async () => {
     await scheduler.startJob({ jobName, key, interval, data, flowControl: 10 })
     const newData = _.cloneDeep(data)
-    newData.emails = [
-      'new@email.com'
-    ]
-    await scheduler.startJob({ jobName, key, interval: '5 hours', data: newData, flowControl: 5 })
+    newData.emails = ['new@email.com']
+    await scheduler.startJob({
+      jobName,
+      key,
+      interval: '5 hours',
+      data: newData,
+      flowControl: 5,
+    })
     expect(await agendaCols.count()).toBe(1)
     const job = await findJob(Scheduler.agendaQueryBuild(key))
     expect(job.length).toBe(1)

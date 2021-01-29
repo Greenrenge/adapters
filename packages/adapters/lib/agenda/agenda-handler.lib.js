@@ -1,34 +1,36 @@
 const Agenda = require('agenda')
 const defaultLogger = require('../../logger')('agenda-handler.lib')
+
 let _logger = defaultLogger
 const { isArray } = require('lodash')
 /*
  * @param {object} features.
  */
 module.exports = class MyAgenda {
-  constructor (features, logger) {
+  constructor(features, logger) {
     if (logger) _logger = logger
     this.ch = null
     this.features = features
     // initialized after connect
     this.agenda = null
   }
-  async connect ({ dbHost, collectionName, mongoClient }) {
+
+  async connect({ dbHost, collectionName, mongoClient }) {
     try {
       if (!mongoClient) {
         this.agenda = new Agenda({
           db: {
             address: dbHost,
-            collection: collectionName
+            collection: collectionName,
           },
           ssl: true,
-          defaultLockLifetime: 5000
+          defaultLockLifetime: 5000,
         })
       } else {
         this.agenda = new Agenda({
           mongo: mongoClient,
           ssl: true,
-          defaultLockLifetime: 5000
+          defaultLockLifetime: 5000,
         })
       }
       await new Promise((resolve, reject) => {
@@ -41,9 +43,11 @@ module.exports = class MyAgenda {
       throw new Error('It cannot connect mongodb', err)
     }
   }
-  async disconnect () {
+
+  async disconnect() {
     await this.agenda.stop()
   }
+
   /*
    * Note Before run this should check.
    * this.agenda.on('ready', () => {
@@ -55,14 +59,16 @@ module.exports = class MyAgenda {
    *
    * @param {jobTypes:Array<string>} jobTypes agenda modes to run eg.achieved_kpi
    */
-  async startAgenda (jobTypes) {
+  async startAgenda(jobTypes) {
     if (!isArray(jobTypes)) {
       _logger.error('no job types configured')
       throw new Error('no job types configured')
     }
-    if (!this.agenda) { await this.connect() }
+    if (!this.agenda) {
+      await this.connect()
+    }
     _logger.info('start agenda')
-    jobTypes.forEach((type) => {
+    jobTypes.forEach(type => {
       try {
         this.features[type](this.agenda)
       } catch (err) {

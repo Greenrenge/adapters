@@ -1,4 +1,3 @@
-
 module.exports = {
   // collectCoverage: true,// equals to --coverage
   collectCoverageFrom: [
@@ -11,11 +10,11 @@ module.exports = {
     '!**/coverage/**',
     '!**/jest_env/**',
     '!**jest**',
-    '!**/vendor/**'
+    '!**/vendor/**',
   ],
   coverageDirectory: './coverage',
   globalSetup: './jest_env/setup.js',
   globalTeardown: './jest_env/teardown.js',
-  testEnvironment: './jest_env/mongo-environment.js'
+  testEnvironment: './jest_env/mongo-environment.js',
   // testEnvironment: 'node'
 }

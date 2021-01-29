@@ -1,6 +1,6 @@
 const MQ_HOST = 'guest:guest@localhost'
-const MessageQueue = require('../../../lib/mq/_message-queue')
 const amqplib = require('amqplib')
+const MessageQueue = require('../../../lib/mq/_message-queue')
 // const jest = require('jest')
 let connection
 let channel

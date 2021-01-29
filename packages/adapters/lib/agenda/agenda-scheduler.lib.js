@@ -1,6 +1,7 @@
 const _ = require('lodash')
 const microtime = require('microtime')
-const promisify = require('util').promisify
+const { promisify } = require('util')
+
 const delay = promisify(setTimeout)
 const _logger = require('../../logger')('agenda-handler.lib')
 // ensure that only 1 code can be run at a time on a single doc work
@@ -8,12 +9,12 @@ const _LOCK_TIME = 30 * 1000 // 30sec
 const LOCK_KEY = 'custom_lock_time'
 const AGENDA_LOCK_KEY = `attrs.${LOCK_KEY}`
 
-const unlock = (job) => {
+const unlock = job => {
   _.set(job, AGENDA_LOCK_KEY, 0)
   return job
 }
-const checkLock = (job) => {
-  const now = microtime.now()// nanosecond
+const checkLock = job => {
+  const now = microtime.now() // nanosecond
   const availbleInNano = _.get(job, AGENDA_LOCK_KEY, 0)
   if (availbleInNano === 0) {
     return 0 // available but needs to lock it first,
@@ -22,13 +23,18 @@ const checkLock = (job) => {
 }
 
 module.exports = class Scheduler {
-  constructor (agenda, { lockTime = _LOCK_TIME } = { lockTime: _LOCK_TIME }, logger = _logger) {
+  constructor(
+    agenda,
+    { lockTime = _LOCK_TIME } = { lockTime: _LOCK_TIME },
+    logger = _logger,
+  ) {
     this.agenda = agenda
     this.logger = logger
     this.uniqueIndexCreated = false
     this.lockTime = lockTime
   }
-  static agendaQueryBuild (key) {
+
+  static agendaQueryBuild(key) {
     const obj = {}
     const keys = Object.keys(key)
     for (let i = 0, len = keys.length; i < len; i++) {
@@ -38,10 +44,10 @@ module.exports = class Scheduler {
   }
 
   /**
- * create necessary indexes in the db
- * @return {Promise<mongoResponse>} object return from mongo.createIndex() method
- */
-  async createUniqueIndex (key) {
+   * create necessary indexes in the db
+   * @return {Promise<mongoResponse>} object return from mongo.createIndex() method
+   */
+  async createUniqueIndex(key) {
     // https://www.guru99.com/working-mongodb-indexes.html
     // Creates an index on the specified field if the index does not already exist.
     const indexes = {}
@@ -51,34 +57,42 @@ module.exports = class Scheduler {
     }
     await this.agenda._collection.createIndex(indexes, { unique: true })
   }
-  async _tryLockJob (job) {
+
+  async _tryLockJob(job) {
     const oldLock = _.get(job, AGENDA_LOCK_KEY)
-    const now = microtime.now()// nanosecond
+    const now = microtime.now() // nanosecond
     try {
-      const result = await this.agenda._collection.updateOne({ _id: job.attrs._id, [LOCK_KEY]: oldLock },
+      const result = await this.agenda._collection.updateOne(
+        { _id: job.attrs._id, [LOCK_KEY]: oldLock },
         {
           $set: {
-            [LOCK_KEY]: now + (this.lockTime * 1000)
-          }
-        })
+            [LOCK_KEY]: now + this.lockTime * 1000,
+          },
+        },
+      )
       // { "acknowledged" : true, "matchedCount" : 1, "modifiedCount" : 1 }
       if (result.matchedCount === 0) {
         this.logger.error(`tryLockJob cannot find job id ${job.attrs._id}`)
       }
       if (result.modifiedCount === 1) {
         return true
-      } else return false
+      }
+      return false
     } catch (err) {
-      this.logger.error(`tryLockJob failed`, JSON.stringify({ name: err.name, message: err.message }))
+      this.logger.error(
+        'tryLockJob failed',
+        JSON.stringify({ name: err.name, message: err.message }),
+      )
       return false
     }
   }
 
-  async _fetchJob (key) {
+  async _fetchJob(key) {
     const jobs = await this.agenda.jobs(Scheduler.agendaQueryBuild(key))
     return jobs && jobs.length ? jobs[0] : undefined
   }
-  async getUnlockedJob (key) {
+
+  async getUnlockedJob(key) {
     let job = await this._fetchJob(key)
     if (!job) return undefined // new Job return undefined then
 
@@ -87,7 +101,7 @@ module.exports = class Scheduler {
     while (!lockComplete) {
       while (msToWait) {
         // job has been locked
-        await delay(msToWait + 50)// adds 50ms more for sure
+        await delay(msToWait + 50) // adds 50ms more for sure
         job = await this._fetchJob(key)
         if (!job) return undefined // someone deleted doc while we were waiting for it
         msToWait = checkLock(job)
@@ -99,11 +113,19 @@ module.exports = class Scheduler {
     // lock complete
     return job
   }
+
   /**
    * create or update a job and start running immediately
    * @param {Object} setting contains jobName:string, key:Object, interval:string, data:any , customSchedule : (job)=> void for custom set schedule mode
    */
-  async startJob ({ jobName, key, interval, data, customSchedule = null, flowControl }) {
+  async startJob({
+    jobName,
+    key,
+    interval,
+    data,
+    customSchedule = null,
+    flowControl,
+  }) {
     let job
     try {
       // lets createUniqueIndexesFirst
@@ -154,18 +176,21 @@ module.exports = class Scheduler {
       this.logger.error(`Error to save job ${JSON.stringify(err)}`)
       throw err
     }
-    this.logger.debug(`Create jobs complete`)
+    this.logger.debug('Create jobs complete')
   }
+
   /**
-  * Disable a job by specify job name and its key
-  * @param {Object} criteria key:Object
-  */
-  async stopJob ({ key, flowControl }) {
+   * Disable a job by specify job name and its key
+   * @param {Object} criteria key:Object
+   */
+  async stopJob({ key, flowControl }) {
     let job
     try {
       job = await this.getUnlockedJob(key)
     } catch (err) {
-      this.logger.error(`Error during find job ${JSON.stringify(err)} for stopJob`)
+      this.logger.error(
+        `Error during find job ${JSON.stringify(err)} for stopJob`,
+      )
       throw err
     }
     if (job) {
@@ -183,16 +208,19 @@ module.exports = class Scheduler {
       try {
         await job.save()
       } catch (err) {
-        this.logger.error(`Error to save job ${JSON.stringify(err)} for stopJob`)
+        this.logger.error(
+          `Error to save job ${JSON.stringify(err)} for stopJob`,
+        )
         throw err
       }
     }
   }
+
   /**
-  * Cancel/Delete a job by specify job name and its key
-  * @param {Object} criteria  key:Object
-  */
-  async cancelJob ({ key, flowControl }) {
+   * Cancel/Delete a job by specify job name and its key
+   * @param {Object} criteria  key:Object
+   */
+  async cancelJob({ key, flowControl }) {
     let job
     try {
       job = await this.getUnlockedJob(key)

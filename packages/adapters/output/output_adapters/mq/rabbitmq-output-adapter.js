@@ -1,11 +1,13 @@
 const MessageQueue = require('../../../lib/mq/_message-queue')
 const _logger = require('../../../logger')('rabbitmq-output-adapter')
+
 let logger = _logger
 const { promisify } = require('util')
+
 const delay = promisify(setTimeout)
 
 module.exports = class RabbitMQOutputAdapter {
-  constructor () {
+  constructor() {
     // explicit props shown here, later initialized
     this.ch = undefined
     this.mq = undefined
@@ -15,7 +17,21 @@ module.exports = class RabbitMQOutputAdapter {
     this.prefetch = undefined
     this.ignoreRoutingKey = false
   }
-  async setting ({ connectionString, exchangeName, exchangeType = 'topic', queueName = 'default_queue', autoCreateQueue = true, namespace, maxPriority = 0, prefetch = 10, ignoreRoutingKey = false, autoReconnect = false, delayReconnectMS = 5000, logger: customLogger }) {
+
+  async setting({
+    connectionString,
+    exchangeName,
+    exchangeType = 'topic',
+    queueName = 'default_queue',
+    autoCreateQueue = true,
+    namespace,
+    maxPriority = 0,
+    prefetch = 10,
+    ignoreRoutingKey = false,
+    autoReconnect = false,
+    delayReconnectMS = 5000,
+    logger: customLogger,
+  }) {
     /**
      * this adapter is meant to send to exchange, not send directly to a queue
      */
@@ -24,11 +40,18 @@ module.exports = class RabbitMQOutputAdapter {
     , exchangeType is ${exchangeType}, queueName is ${queueName},prefetch is ${prefetch}
     , ignoreRoutingKey is ${ignoreRoutingKey}`)
 
-    if (!exchangeName || !connectionString || !exchangeName.length || !connectionString.length) {
+    if (
+      !exchangeName ||
+      !connectionString ||
+      !exchangeName.length ||
+      !connectionString.length
+    ) {
       logger.error('an exchangeName and connectionString must be specified!')
       throw new Error('an exchangeName and connectionString must be specified!')
     }
-    this.mq = new MessageQueue(connectionString, { endProcessIfError: !autoReconnect })
+    this.mq = new MessageQueue(connectionString, {
+      endProcessIfError: !autoReconnect,
+    })
     this.exchangeName = exchangeName
     this.exchangeType = exchangeType
     this.queueName = queueName
@@ -42,11 +65,11 @@ module.exports = class RabbitMQOutputAdapter {
     this.maxPriority = +maxPriority
   }
 
-  async reconnect () {
+  async reconnect() {
     try {
       if (this.mq) {
         try {
-        // destroy old channel
+          // destroy old channel
           if (this.ch) {
             await this.ch.close()
           }
@@ -55,18 +78,20 @@ module.exports = class RabbitMQOutputAdapter {
             await this.mq.connection.close()
           }
         } catch (err) {
-          logger.error(`error to close old channel/connection`, err)
+          logger.error('error to close old channel/connection', err)
         }
       }
       await this._connectMQ()
-      if (this.autoReconnect) { this._setReconnect(this.mq.connection, this.ch) }
+      if (this.autoReconnect) {
+        this._setReconnect(this.mq.connection, this.ch)
+      }
     } catch (err) {
-      logger.error(`error to reconnect`, err)
+      logger.error('error to reconnect', err)
       throw err
     }
   }
 
-  async _autoReconnect () {
+  async _autoReconnect() {
     let complete = false
     while (!complete) {
       await delay(+this.delayReconnectMS || 5000)
@@ -79,43 +104,59 @@ module.exports = class RabbitMQOutputAdapter {
     }
   }
 
-  _setReconnect (connection, channel) {
-    const toReconnect = (eventNames = []) => event => eventNames.map(n => event.on(n, async (err) => {
-      logger.error(`${n} IS EMITTED !! TRYING TO RECONNECT `, err)
-      await this._autoReconnect()
-    }))
+  _setReconnect(connection, channel) {
+    const toReconnect = (eventNames = []) => event =>
+      eventNames.map(n =>
+        event.on(n, async err => {
+          logger.error(`${n} IS EMITTED !! TRYING TO RECONNECT `, err)
+          await this._autoReconnect()
+        }),
+      )
     toReconnect(['error', 'close'])(connection)
     toReconnect(['error', 'close'])(channel)
   }
 
-  async _initExchange () {
+  async _initExchange() {
     try {
-      await this.mq.assertExchange(this.ch, this.exchangeName, this.exchangeType)
+      await this.mq.assertExchange(
+        this.ch,
+        this.exchangeName,
+        this.exchangeType,
+      )
     } catch (err) {
-      logger.error(`cannot initiation exchange on rabbitmq`, err)
+      logger.error('cannot initiation exchange on rabbitmq', err)
       throw err
     }
   }
-  async _initQueueAndBind (channel) {
+
+  async _initQueueAndBind(channel) {
     try {
       // channel always has value (*=default)
       // queueName of each channel(routingKey) is ${queueName}_${namespace}.${routingKey}
-      const routingKey = `${this.namespace ? this.namespace + '.' : ''}${channel || ''}`
+      const routingKey = `${
+        this.namespace ? `${this.namespace}.` : ''
+      }${channel || ''}`
       await this.mq.assertQueue(this.ch, `${this.queueName}_${routingKey}`, {
         prefetch: this.prefetch,
-        ...this.maxPriority && { maxPriority: this.maxPriority }
+        ...(this.maxPriority && { maxPriority: this.maxPriority }),
       })
       logger.debug('create queue complete', `${this.queueName}_${routingKey}`)
-      await this.mq.bindQueue(this.ch, `${this.queueName}_${routingKey}`, this.exchangeName, routingKey)
+      await this.mq.bindQueue(
+        this.ch,
+        `${this.queueName}_${routingKey}`,
+        this.exchangeName,
+        routingKey,
+      )
       logger.debug('bind queue complete', routingKey)
       // need time to really works if first time binding
       await delay(2000)
     } catch (err) {
-      logger.error(`cannot binding queue to exchange`, err)
+      logger.error('cannot binding queue to exchange', err)
       throw err
     }
   }
-  async _connectMQ () {
+
+  async _connectMQ() {
     try {
       if (!this.mq) {
         logger.error('no setting(..) called before connect!')
@@ -132,37 +173,48 @@ module.exports = class RabbitMQOutputAdapter {
         logger.error('MQ channel connection close')
         throw new Error('MQ channel connection close.')
       })
-      this.ch.on('error', (err) => {
-        logger.error(`MQ channel connection close by error.`, err)
-        throw new Error('MQ channel connection close by error.' + JSON.stringify(err))
+      this.ch.on('error', err => {
+        logger.error('MQ channel connection close by error.', err)
+        throw new Error(
+          `MQ channel connection close by error.${JSON.stringify(err)}`,
+        )
       })
     } catch (err) {
       throw err
     }
   }
-  async connect () {
+
+  async connect() {
     try {
       await this._connectMQ()
-      if (this.autoReconnect) { this._setReconnect(this.mq.connection, this.ch) }
+      if (this.autoReconnect) {
+        this._setReconnect(this.mq.connection, this.ch)
+      }
       await this._initExchange()
     } catch (err) {
-      logger.error(`error to connect`, err)
+      logger.error('error to connect', err)
       throw err
     }
   }
-  async _ensureQueueExistsAndBind (channel) {
+
+  async _ensureQueueExistsAndBind(channel) {
     if (!this._cachedQueue[channel]) {
       // non-cached , need to init
       await this._initQueueAndBind(channel)
       this._cachedQueue[channel] = true
     }
   }
-  async publish ({ channel, data, persist: autoCreateQueue = this.autoCreateQueue }) {
+
+  async publish({
+    channel,
+    data,
+    persist: autoCreateQueue = this.autoCreateQueue,
+  }) {
     /**
-    * if channel is specified, it is the routing key on a queue, if undefined it will later set as ''
-    */
+     * if channel is specified, it is the routing key on a queue, if undefined it will later set as ''
+     */
     if (!this.mq) {
-      throw new Error(`please call connect() before publishing data`)
+      throw new Error('please call connect() before publishing data')
     }
     const message = JSON.stringify(data)
     if (this.exchangeType === 'topic' && channel === undefined) {
@@ -176,19 +228,29 @@ module.exports = class RabbitMQOutputAdapter {
     await this.sendToExchange(channel, message)
   }
 
-  async sendToExchange (channel, message) {
+  async sendToExchange(channel, message) {
     try {
-      const routingKey = `${this.namespace ? this.namespace + '.' : ''}${channel || ''}`
-      logger.debug(`publishing data on routing key =${routingKey}`, JSON.stringify(message))
+      const routingKey = `${
+        this.namespace ? `${this.namespace}.` : ''
+      }${channel || ''}`
+      logger.debug(
+        `publishing data on routing key =${routingKey}`,
+        JSON.stringify(message),
+      )
       // this.mq.publish(this.ch, this.exchangeName, message, channel)
-      return this.ch.publish(this.exchangeName, routingKey || '', Buffer.from(message), { persistent: true })
+      return this.ch.publish(
+        this.exchangeName,
+        routingKey || '',
+        Buffer.from(message),
+        { persistent: true },
+      )
     } catch (err) {
-      logger.error(`cannot publish data to rabbitmq`, err)
+      logger.error('cannot publish data to rabbitmq', err)
       throw err
     }
   }
 
-  async disconnect () {
+  async disconnect() {
     try {
       await this.mq.closeChannel(this.ch)
       await this.mq.closeConnection()

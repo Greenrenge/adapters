@@ -1,35 +1,50 @@
 const amqp = require('amqplib')
-const EventEmitter = require('events').EventEmitter
+const { EventEmitter } = require('events')
 const _logger = require('../../logger')('message-queue')
 
 module.exports = class MessageQueue {
-  constructor (connectionString, { prefetch = 10, heartbeat = 580, json = true, endProcessIfError = true, logger = _logger } = {}) {
+  constructor(
+    connectionString,
+    {
+      prefetch = 10,
+      heartbeat = 580,
+      json = true,
+      endProcessIfError = true,
+      logger = _logger,
+    } = {},
+  ) {
     this.connection = undefined
     this.connStr = connectionString
     this.prefetch = prefetch || 10
     this.heartbeat = heartbeat || 580
     this.json = json === undefined ? true : json
-    this.endProcessIfError = endProcessIfError === undefined ? true : endProcessIfError
+    this.endProcessIfError =
+      endProcessIfError === undefined ? true : endProcessIfError
     this.logger = logger || _logger
     // If connection string has no heartbeat.. put default to it
     if (/\bheartbeat\b/.test(this.connStr)) {
-      var prefix = /\?/.test(this.connStr) ? '&' : '?'
-      this.connStr += prefix + 'heartbeat=' + this.heartbeat
+      const prefix = /\?/.test(this.connStr) ? '&' : '?'
+      this.connStr += `${prefix}heartbeat=${this.heartbeat}`
     }
     if (!this.connStr.startsWith('amqp://')) {
       this.connStr = `amqp://${this.connStr}`
     }
-    this.error = (err, msg, ...params) => this.logger.error(msg, { name: err.name, message: err.message, stack: err.stack }, ...params)
+    this.error = (err, msg, ...params) =>
+      this.logger.error(
+        msg,
+        { name: err.name, message: err.message, stack: err.stack },
+        ...params,
+      )
   }
 
-  async connect () {
+  async connect() {
     try {
       const connection = await amqp.connect(this.connStr)
       if (this.endProcessIfError) {
-        connection.on('close', (err) => {
+        connection.on('close', err => {
           this.bail(err)
         })
-        connection.on('error', (err) => {
+        connection.on('error', err => {
           this.bail(err)
         })
       }
@@ -39,16 +54,20 @@ module.exports = class MessageQueue {
       this._handleError(err)
     }
   }
-  _handleError (err) {
+
+  _handleError(err) {
     if (this.endProcessIfError) {
       this.bail(err)
     } else {
       throw err
     }
   }
-  async createChannel () {
+
+  async createChannel() {
     if (!this.connection) {
-      this._handleError(new Error('Please connect to mq first by call .connect'))
+      this._handleError(
+        new Error('Please connect to mq first by call .connect'),
+      )
     }
     try {
       const ch = await this.connection.createChannel()
@@ -58,9 +77,12 @@ module.exports = class MessageQueue {
       this._handleError(err)
     }
   }
-  async createConfirmChannel () {
+
+  async createConfirmChannel() {
     if (!this.connection) {
-      this._handleError(new Error('Please connect to mq first by call .connect'))
+      this._handleError(
+        new Error('Please connect to mq first by call .connect'),
+      )
     }
     try {
       const ch = await this.connection.createConfirmChannel()
@@ -70,6 +92,7 @@ module.exports = class MessageQueue {
       this._handleError(err)
     }
   }
+
   /**
    *
    *
@@ -86,9 +109,9 @@ module.exports = class MessageQueue {
         maxPriority?: number;
     }
 */
-  async assertQueue (channel, queueName, prefetchOrOpts = this.prefetch) {
+  async assertQueue(channel, queueName, prefetchOrOpts = this.prefetch) {
     let opts = {
-      durable: true
+      durable: true,
     }
     if (['number', 'string'].includes(typeof prefetchOrOpts)) {
       channel.prefetch(parseInt(prefetchOrOpts))
@@ -99,7 +122,7 @@ module.exports = class MessageQueue {
       const { prefetch, ...rest } = prefetchOrOpts
       opts = {
         ...opts,
-        ...rest
+        ...rest,
       }
     }
     try {
@@ -110,21 +133,28 @@ module.exports = class MessageQueue {
     }
   }
 
-  assertPriorityQueue (channel, queueName, maxPriority = 10, prefetchOrOpts = this.prefetch) {
+  assertPriorityQueue(
+    channel,
+    queueName,
+    maxPriority = 10,
+    prefetchOrOpts = this.prefetch,
+  ) {
     return this.assertQueue(channel, queueName, {
       maxPriority: +maxPriority,
-      ...typeof prefetchOrOpts === 'object' ? prefetchOrOpts : { prefetch: prefetchOrOpts }
+      ...(typeof prefetchOrOpts === 'object'
+        ? prefetchOrOpts
+        : { prefetch: prefetchOrOpts }),
     })
   }
 
-  setPrefetch (channel, prefetch = this.prefetch) {
+  setPrefetch(channel, prefetch = this.prefetch) {
     channel.prefetch(parseInt(prefetch))
   }
 
-  async assertExchange (ch, exchangeName, type) {
+  async assertExchange(ch, exchangeName, type) {
     try {
       await ch.assertExchange(exchangeName, type, {
-        durable: true
+        durable: true,
       })
     } catch (err) {
       this.error(err, 'cannot assertExchange')
@@ -132,15 +162,15 @@ module.exports = class MessageQueue {
     }
   }
 
-  readMessageWithAck (channel, queueName) {
+  readMessageWithAck(channel, queueName) {
     const myEmitter = new EventEmitter()
-    channel.consume(queueName, (msg) => {
+    channel.consume(queueName, msg => {
       if (msg !== null) {
         try {
           const content = msg.content.toString()
           const result = this.json ? this._parseJSON(content) : content
           if (result) {
-            myEmitter.emit('data', result, (err) => {
+            myEmitter.emit('data', result, err => {
               if (err) {
                 channel.nack(msg)
               } else {
@@ -159,28 +189,33 @@ module.exports = class MessageQueue {
     return myEmitter
   }
 
-  readMessageWithNoAck (channel, queueName) {
+  readMessageWithNoAck(channel, queueName) {
     const myEmitter = new EventEmitter()
     const options = {
-      'noAck': true
+      noAck: true,
     }
-    channel.consume(queueName, (msg) => {
-      if (msg !== null) {
-        try {
-          const content = msg.content.toString()
-          const result = this.json ? this._parseJSON(content) : content
-          if (result) {
-            myEmitter.emit('data', result)
-            return
+    channel.consume(
+      queueName,
+      msg => {
+        if (msg !== null) {
+          try {
+            const content = msg.content.toString()
+            const result = this.json ? this._parseJSON(content) : content
+            if (result) {
+              myEmitter.emit('data', result)
+              return
+            }
+          } catch (err) {
+            this.error(err, 'channel consume with ack error')
+            this._handleError(err)
           }
-        } catch (err) {
-          this.error(err, 'channel consume with ack error')
-          this._handleError(err)
         }
-      }
-    }, options)
+      },
+      options,
+    )
     return myEmitter
   }
+
   /**
  *
  { expiration?: string | number;
@@ -204,17 +239,22 @@ module.exports = class MessageQueue {
         appId?: string;
  }
 */
-  sendQueueMessage (channel, queueName, message, options = {}) {
+  sendQueueMessage(channel, queueName, message, options = {}) {
     message = typeof message === 'string' ? message : JSON.stringify(message)
     return channel.sendToQueue(queueName, Buffer.from(message), options)
   }
 
-  publish (channel, exchangeName, message, routingKey = '*', options = {}) {
+  publish(channel, exchangeName, message, routingKey = '*', options = {}) {
     message = typeof message === 'string' ? message : JSON.stringify(message)
-    return channel.publish(exchangeName, routingKey, Buffer.from(message), options)
+    return channel.publish(
+      exchangeName,
+      routingKey,
+      Buffer.from(message),
+      options,
+    )
   }
 
-  async closeChannel (channel) {
+  async closeChannel(channel) {
     try {
       await channel.close()
     } catch (err) {
@@ -223,9 +263,11 @@ module.exports = class MessageQueue {
     }
   }
 
-  async closeConnection () {
+  async closeConnection() {
     if (!this.connection) {
-      this._handleError(new Error('Please connect to mq first by call .connect'))
+      this._handleError(
+        new Error('Please connect to mq first by call .connect'),
+      )
     }
     try {
       await this.connection.close()
@@ -235,7 +277,7 @@ module.exports = class MessageQueue {
     }
   }
 
-  async purge (channel, queueName) {
+  async purge(channel, queueName) {
     try {
       await channel.purgeQueue(queueName)
     } catch (err) {
@@ -244,7 +286,7 @@ module.exports = class MessageQueue {
     }
   }
 
-  async bindQueue (channel, queue, source, pattern) {
+  async bindQueue(channel, queue, source, pattern) {
     try {
       await channel.bindQueue(queue, source, pattern)
     } catch (err) {
@@ -253,7 +295,7 @@ module.exports = class MessageQueue {
     }
   }
 
-  async unbindQueue (channel, queue, source, pattern, callback) {
+  async unbindQueue(channel, queue, source, pattern, callback) {
     try {
       await channel.unbindQueue(queue, source, pattern)
     } catch (err) {
@@ -262,10 +304,14 @@ module.exports = class MessageQueue {
     }
   }
 
-  async deleteQueue (channel, queueName, options = {
-    'ifUnused': false,
-    'ifEmpty': false
-  }) {
+  async deleteQueue(
+    channel,
+    queueName,
+    options = {
+      ifUnused: false,
+      ifEmpty: false,
+    },
+  ) {
     try {
       await channel.deleteQueue(queueName, options)
     } catch (err) {
@@ -274,9 +320,13 @@ module.exports = class MessageQueue {
     }
   }
 
-  async deleteExchange (channel, exchangeName, options = {
-    'ifUnused': false
-  }) {
+  async deleteExchange(
+    channel,
+    exchangeName,
+    options = {
+      ifUnused: false,
+    },
+  ) {
     try {
       await channel.deleteExchange(exchangeName, options)
     } catch (err) {
@@ -285,7 +335,7 @@ module.exports = class MessageQueue {
     }
   }
 
-  bail (err) {
+  bail(err) {
     if (err) {
       this.error(err, 'process is going to exit')
       console.log('process is going to exit', err)
@@ -295,7 +345,8 @@ module.exports = class MessageQueue {
     }
     process.exit(1)
   }
-  _parseJSON (content) {
+
+  _parseJSON(content) {
     try {
       return JSON.parse(content)
     } catch (err) {
