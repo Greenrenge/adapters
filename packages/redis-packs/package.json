@@ -1,0 +1,20 @@
+{
+  "name": "@kkg/redis-packs",
+  "version": "1.0.0",
+  "description": "template for any libraries",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "rimraf ./dist && babel src -s -d dist --source-maps",
+    "test": "cross-env NODE_ENV=test mocha --recursive \"test/**/*.test.js\"",
+    "lint": "eslint --ignore-path .eslintignore .",
+    "lint:fix": "npm run lint -- --fix"
+  },
+  "author": "Kitthanat S.",
+  "license": "ISC",
+  "publishConfig": {
+    "directory": "dist"
+  },
+  "dependencies": {
+    "debug": "^4.2.0"
+  }
+}

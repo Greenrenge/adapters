@@ -1,0 +1,13 @@
+{
+  "packages": ["packages/*", "providers/*"],
+  "version": "independent",
+  "npmClient": "npm",
+  "command": {
+    "publish": {
+      "ignoreChanges": ["**/dist", "*.md"]
+    },
+    "bootstrap": {
+      "npmClientArgs": ["--no-package-lock"]
+    }
+  }
+}

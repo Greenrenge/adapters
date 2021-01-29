@@ -1,0 +1,29 @@
+{
+  "debug.node.autoAttach": "disabled",
+  "eslint.workingDirectories": [
+    {
+      "directory": "providers/7stars",
+      "!cwd": false
+    },
+    {
+      "directory": "providers/dragoncity",
+      "!cwd": false
+    },
+    {
+      "directory": "packages/demo",
+      "!cwd": false
+    },
+    {
+      "directory": "packages/async-packs",
+      "!cwd": false
+    },
+    {
+      "directory": "packages/redis-packs",
+      "!cwd": false
+    },
+    {
+      "directory": "packages/captcha-packs",
+      "!cwd": false
+    }
+  ]
+}
