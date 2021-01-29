@@ -13,5 +13,6 @@
   "license": "ISC",
   "publishConfig": {
     "directory": "dist"
-  }
+  },
+  "gitHead": "8ad32eff331b36287547b7ae79835813fead0ebc"
 }
