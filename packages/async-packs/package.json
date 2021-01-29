@@ -1,6 +1,6 @@
 {
   "name": "@greenrenge/async-packs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "template for any libraries",
   "main": "dist/index.js",
   "scripts": {
@@ -13,6 +13,5 @@
   "license": "ISC",
   "publishConfig": {
     "directory": "dist"
-  },
-  "dependencies": {}
+  }
 }
