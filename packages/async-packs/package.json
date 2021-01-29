@@ -11,7 +11,5 @@
   },
   "author": "Kitthanat S.",
   "license": "ISC",
-  "publishConfig": {
-    "directory": "dist"
-  }
+  "gitHead": "8a9f1a2bc05bfb38b0bf418884aa54b9ec9021fd"
 }
