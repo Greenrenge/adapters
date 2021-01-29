@@ -1,5 +1,12 @@
 export const delay = ms =>
   new Promise(resolve => setTimeout(() => resolve(), ms))
+/**
+ *
+ * @param {Promise} promise
+ * @param {Function} assertion
+ * @param {Number} limit
+ * @param {Number} msDelay
+ */
 export const retryUntil = async (
   promise,
   assertion = a => !!a,
