@@ -1,0 +1,38 @@
+{
+  "name": "@greenrenge/adapters",
+  "version": "1.0.0",
+  "description": "adapters for data transferring",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest ./test"
+  },
+  "author": "green dik name",
+  "license": "ISC",
+  "dependencies": {
+    "agenda": "^4.0.1",
+    "amqplib": "^0.6.0",
+    "bluebird": "^3.7.2",
+    "dotenv": "^5.0.1",
+    "ioredis": "^4.19.4",
+    "lodash": "^4.17.10",
+    "microtime": "^3.0.0",
+    "safe-buffer": "^5.2.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "standard": {
+    "globals": [
+      "jest",
+      "it",
+      "test",
+      "beforeEach",
+      "beforeAll",
+      "afterEach",
+      "afterAll",
+      "describe",
+      "expect",
+      "fail"
+    ]
+  }
+}

@@ -4,14 +4,14 @@
   "description": "template for any libraries",
   "main": "dist/index.js",
   "scripts": {
-    "build": "rimraf ./dist && babel src -s -d dist --source-maps",
+    "build": "babel --root-mode upward src -s -d dist --delete-dir-on-start --source-maps --copy-files",
     "test": "cross-env NODE_ENV=test mocha --recursive \"test/**/*.test.js\"",
     "lint": "eslint --ignore-path .eslintignore .",
     "lint:fix": "npm run lint -- --fix",
     "test:watch": "cross-env NODE_ENV=test nodemon --watch test --watch src --exec npm run test",
-    "start:watch": "cross-env NODE_ENV=development nodemon --watch src --exec node_modules/.bin/babel-node -- src/index.js",
-    "start": "cross-env NODE_ENV=development nodemon --watch --exec node_modules/.bin/babel-node -- src/index.js",
-    "demo": "cross-env NODE_ENV=development nodemon --watch --exec node_modules/.bin/babel-node -- demo/index.js"
+    "start:watch": "cross-env NODE_ENV=development nodemon --watch src --exec node_modules/.bin/babel-node -- --root-mode upward -- src/index.js",
+    "start": "cross-env NODE_ENV=development nodemon --watch --exec node_modules/.bin/babel-node -- --root-mode upward -- src/index.js",
+    "demo": "cross-env NODE_ENV=development nodemon --watch --exec node_modules/.bin/babel-node -- --root-mode upward -- demo/index.js"
   },
   "author": "Kitthanat S.",
   "license": "ISC",

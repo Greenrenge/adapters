@@ -1,0 +1,31 @@
+{
+  "env": {
+    "development": {
+      "sourceMaps": "inline",
+      "plugins": ["source-map-support"]
+    }
+  },
+  "presets": [
+    [
+      "@babel/preset-env",
+      {
+        "targets": {
+          "node": "current"
+        },
+        "modules": "commonjs"
+      }
+    ]
+  ],
+  "plugins": [
+    ["@babel/plugin-proposal-decorators", { "decoratorsBeforeExport": true }],
+    ["@babel/plugin-proposal-class-properties", { "loose": true }],
+    "@babel/plugin-transform-runtime",
+    "dynamic-import-node",
+    "source-map-support",
+    "@babel/plugin-proposal-optional-chaining",
+    "transform-dirname-filename",
+    "transform-css-import-to-string"
+  ],
+  "sourceMaps": "inline",
+  "retainLines": true
+}
