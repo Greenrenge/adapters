@@ -15,6 +15,9 @@
   },
   "author": "Kitthanat S.",
   "license": "ISC",
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@greenrenge/request": "^1.0.3",
     "cheerio": "^1.0.0-rc.3",
@@ -25,5 +28,5 @@
     "sharp": "^0.26.1",
     "tesseract.js": "^2.1.3"
   },
-  "gitHead": "8a9f1a2bc05bfb38b0bf418884aa54b9ec9021fd"
+  "gitHead": "ac9ecedc0ee80206ec7f61efa38eaf7a66901411"
 }
