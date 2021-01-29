@@ -1,5 +1,5 @@
 {
-  "name": "@kkg/captcha-packs",
+  "name": "@greenrenge/captcha-packs",
   "version": "1.0.0",
   "description": "template for any libraries",
   "main": "dist/index.js",

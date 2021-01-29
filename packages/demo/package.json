@@ -1,5 +1,5 @@
 {
-  "name": "@kkg/demo",
+  "name": "@greenrenge/demo",
   "version": "1.0.0",
   "description": "template for any libraries",
   "main": "dist/index.js",

@@ -1,6 +1,5 @@
 {
-  "name": "external-providers-monorepos",
-  "private": true,
+  "name": "@greenrenge/adapters",
   "scripts": {
     "symlink": "lerna exec \"rm -r node_modules/.bin ; mkdir node_modules ; ln -s ../../../node_modules/.bin node_modules/.bin\""
   },
@@ -49,11 +48,9 @@
     ]
   },
   "dependencies": {
-    "@kkg/7stars": "file:providers/7stars",
-    "@kkg/async-packs": "file:packages/async-packs",
-    "@kkg/captcha-packs": "file:packages/captcha-packs",
-    "@kkg/demo": "file:packages/demo",
-    "@kkg/dragoncity": "file:providers/dragoncity",
-    "@kkg/redis-packs": "file:packages/redis-packs"
+    "@greenrenge/async-packs": "file:packages/async-packs",
+    "@greenrenge/captcha-packs": "file:packages/captcha-packs",
+    "@greenrenge/demo": "file:packages/demo",
+    "@greenrenge/redis-packs": "file:packages/redis-packs"
   }
 }
