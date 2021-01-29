@@ -1,6 +1,6 @@
 {
   "name": "@greenrenge/captcha-packs",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "template for any libraries",
   "main": "dist/index.js",
   "scripts": {
